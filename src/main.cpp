@@ -112,6 +112,9 @@ int main() {
           }
 
           bool too_close = false;
+          bool keep_lane = true;
+          bool safe_change_right = true;
+          bool safe_change_left = true;
 
           // Find ref_v to use
           for (int i = 0; i < sensor_fusion.size(); ++i) {
@@ -135,8 +138,42 @@ int main() {
                 // change lanes.
                 // ref_vel = 29.5;  // mph
                 too_close = true;
+                keep_lane = false;
               }
             }
+            // Ego is not in the left-most lane and Car is in the left adjacent
+            // lane.
+            if ((0 != lane) && (d < (2 + 4 * (lane - 1) + 2)) &&
+                (d > (2 + 4 * (lane - 1) - 2))) {
+              double check_car_s = sensor_fusion[i][5];
+              // If Car is within +/-20 m from our s position, changing lanes is
+              // considered unsafe.
+              if (abs(check_car_s - car_s) < 20) {
+                safe_change_left = false;
+              }
+            }
+            // Ego is not in the right-most lane and Car is in the right
+            // adjacent lane.
+            if ((2 != lane) && (d < (2 + 4 * (lane + 1) + 2)) &&
+                (d > (2 + 4 * (lane + 1) - 2))) {
+              double check_car_s = sensor_fusion[i][5];
+              // If Car is within +/-20 m from our s position, changing lanes is
+              // considered unsafe.
+              if (abs(check_car_s - car_s) < 20) {
+                safe_change_right = false;
+              }
+            }
+          }
+
+          // There is a car in front of us. Change to the left lane if Ego is
+          // not in the left-most lane and it is safe.
+          if ((!keep_lane) && (0 != lane) && safe_change_left) {
+            lane -= 1;
+          }
+          // There is a car in front of us. Change to the right lane if Ego is
+          // not in the right-most lane and it is safe.
+          else if ((!keep_lane) && (2 != lane) && safe_change_right) {
+            lane += 1;
           }
 
           if (too_close) {
