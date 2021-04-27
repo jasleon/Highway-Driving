@@ -156,7 +156,7 @@ vector<double> ptsy;
 
 The first two elements of this list of waypoints will reference the starting point either as where the car is or at the previous path's end point. This section is implemented in `src/main.cpp` from lines #191 to #227. 
 
-The next step is to add evenly 30 meters spaced waypoints in Frenet coordinates ahead of the starting reference. We use the `getXY` helper function to convert from Frenet to Cartesian coordinates. 
+The next step is to add evenly 30 meters spaced waypoints in Frenet coordinates ahead of the starting reference. I used the `getXY` helper function to convert from Frenet to Cartesian coordinates. 
 
 ```c++
 vector<double> next_wp0 = getXY(car_s + 30, (2 + 4 * lane), map_waypoints_s,
@@ -167,7 +167,7 @@ vector<double> next_wp2 = getXY(car_s + 90, (2 + 4 * lane), map_waypoints_s,
                                 map_waypoints_x, map_waypoints_y);
 ```
 
-Before creating the spline, I rotated the list of waypoints such that the car reference angle shifts to 0 degrees. This rotation makes getting y values from the spline much easier. This transformation is implemented in in `src/main.cpp` from lines #249 to #256. 
+Before creating the spline, I rotated the list of waypoints such that the car reference angle shifts to 0 degrees. This rotation makes getting y values from the spline much easier later on. This transformation is implemented in in `src/main.cpp` from lines #249 to #256. 
 
 The next step is to create a spline to generate a path. I used the [spline](http://kluge.in-chemnitz.de/opensource/spline/) library shown in the Q&A session.
 
@@ -179,3 +179,21 @@ tk::spline s;
 s.set_points(ptsx, ptsy);
 ```
 
+The final step is to build the set of (x, y) coordinates that the car will visit next. 
+
+I start by adding all the previous path points from last time. 
+
+```c++
+for (int i = 0; i < previous_path_x.size(); ++i) {
+  next_x_vals.push_back(previous_path_x[i]);
+  next_y_vals.push_back(previous_path_y[i]);
+}
+```
+
+The remaining points of the path will be taken from the spline. I break up spline points such that the path covers 30 meters in the *rotated* x-axis and the car travels at our desired reference velocity. 
+
+This calculation is simple because I only need to find the increment value for x given our system constraints. Once I find the x-point, I look up its corresponding y-point using the spline. 
+
+Finally, I revert the rotation to get the actual path points. 
+
+This section of code is implemented from lines #272 to #300.
