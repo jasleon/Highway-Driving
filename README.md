@@ -1,6 +1,6 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
 
@@ -142,4 +142,40 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
+## Model Documentation
+
+This section describes the code for generating paths.
+
+The first section of the code creates a list of waypoints that will be used to fit a spline.
+
+```c++
+vector<double> ptsx;
+vector<double> ptsy;
+```
+
+The first two elements of this list of waypoints will reference the starting point either as where the car is or at the previous path's end point. This section is implemented in `src/main.cpp` from lines #191 to #227. 
+
+The next step is to add evenly 30 meters spaced waypoints in Frenet coordinates ahead of the starting reference. We use the `getXY` helper function to convert from Frenet to Cartesian coordinates. 
+
+```c++
+vector<double> next_wp0 = getXY(car_s + 30, (2 + 4 * lane), map_waypoints_s,
+                                map_waypoints_x, map_waypoints_y);
+vector<double> next_wp1 = getXY(car_s + 60, (2 + 4 * lane), map_waypoints_s,
+                                map_waypoints_x, map_waypoints_y);
+vector<double> next_wp2 = getXY(car_s + 90, (2 + 4 * lane), map_waypoints_s,
+                                map_waypoints_x, map_waypoints_y);
+```
+
+Before creating the spline, I rotated the list of waypoints such that the car reference angle shifts to 0 degrees. This rotation makes getting y values from the spline much easier. This transformation is implemented in in `src/main.cpp` from lines #249 to #256. 
+
+The next step is to create a spline to generate a path. I used the [spline](http://kluge.in-chemnitz.de/opensource/spline/) library shown in the Q&A session.
+
+```c++
+// Create a spline
+tk::spline s;
+
+// Set (x, y) points to the spline
+s.set_points(ptsx, ptsy);
+```
 
